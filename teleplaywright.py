@@ -1,26 +1,24 @@
 import asyncio
 from playwright.async_api import async_playwright
 
-user_list = ['username1', 'username2', 'username3']
-
-target_group = 'https://t.me/your_group_link'
-
-throttle_delay = 60  # Adjust as needed
+user_list = ['natapionova', 'valeddm']
+group_name = 'test'
+throttle_delay = 5
 
 
-async def invite_user_to_channel(page, username, group):
+async def invite_user_to_channel(page, username):
     try:
-        # Search for the user by username
-        await page.goto(f'https://t.me/{username}', wait_until='networkidle')
+        await page.click('button[title="Add users"]')
+        await page.fill('input#new-members-picker-search', username)
+        # await page.wait_for_selector('div.ListItem-button')
+        # input("Press Enter to continue...")
+        # await page.screenshot(path="images/user_add_user.png")
 
-        # Click on the "Add to group" button
-        await page.click('button:has-text("Add to group")')
+        # await page.screenshot(path="images/user_add_ready.png")
+        # input("Press Enter to continue...")
+        await page.click('div.ListItem-button')
 
-        # Select the target group/channel and invite
-        await page.type('input[placeholder="Search"]', group)
-        await page.click(f'text={group}')
-
-        await page.click('button:has-text("Add")')
+        await page.click('button[title="Add users"]')
         print(f"Successfully invited {username}")
 
     except Exception as e:
@@ -29,20 +27,40 @@ async def invite_user_to_channel(page, username, group):
 
 async def main():
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False)
-        page = await browser.new_page()
-        await page.goto('https://web.telegram.org/')
+        # Create a persistent context
+        context = await p.chromium.launch_persistent_context(
+            user_data_dir="session",
+            headless=False
+        )
+        page = await context.new_page()
 
-        # Wait for manual login
-        print("Please log in to Telegram Web manually...")
-        await asyncio.sleep(60)
+        try:
+            await page.goto('https://web.telegram.org/', wait_until='networkidle')
+            # print("Please log in to Telegram Web manually...")
+            # manually authorize in Telegram
+            # await asyncio.sleep(60)
+            # await page.screenshot(path="images/user_authorized.png")
+            print("Successfully navigated to Telegram Web.")
+            input("Press Enter to continue...")
+        except Exception as e:
+            print(f"Failed to navigate: {e}")
+
+        # Select the target group/channel
+        await page.type('input.input-field-input', group_name)
+        await page.click(f'text={group_name}', force=True)
+        await page.fill('input.input-field-input', '')
+        # await page.screenshot(path="images/user_group_search_1.png")
+        # input("Press Enter to continue...")
+
+        await page.click('div.ListItem.chat-item-clickable.search-result')
+        # await page.screenshot(path="images/user_group_search_2.png")
 
         # Iterate over the user list and invite them to the group/channel
         for username in user_list:
-            await invite_user_to_channel(page, username, group=target_group)
+            await invite_user_to_channel(page, username)
             await asyncio.sleep(throttle_delay)
 
-        await browser.close()
+        await context.close()
 
 
 # Run the script
