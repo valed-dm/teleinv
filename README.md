@@ -1,7 +1,8 @@
 # teleinv
 Telegram group/channel automated invitor.
-
 ## Общая информация
+
+Файл teleplaywright.py
 
 Скрипт предназначен для добавления пользователей в группу в телеграмме.
 Скрипт готов к тесту.
